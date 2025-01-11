@@ -1,6 +1,6 @@
 use Test::More;
 
-use Lic::Scanner::File;
+require_ok( 'Lic::Scanner::File' );
 
 my $input = 'one
 two\
