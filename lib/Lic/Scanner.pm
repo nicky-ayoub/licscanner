@@ -1,6 +1,6 @@
+package Lic::Scanner;
 use strict;
 use warnings;
-package Lic::Scanner;
 
 # ABSTRACT: a really awesome library
 

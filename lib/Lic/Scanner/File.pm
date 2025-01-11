@@ -1,8 +1,34 @@
+package Lic::Scanner::File;
 use strict;
 use warnings;
-package Lic::File;
 
-# ABSTRACT: a really awesome library
+use Path::Tiny;
+
+# ABSTRACT: File reader that supports backslash line continuations
+
+sub slurp {
+    my $filename = shift;
+
+    my $guts = path($filename)->slurp_utf8;
+
+    if ( wantarray ) {  
+        my @data =  processBackSlash($guts);
+        return @data;
+    } else {
+        my $data =  processBackSlash($guts);
+        return $data;
+    }
+}
+
+sub processBackSlash {
+    my $string = shift;
+    $string =~ s/\\\s*\n//smxg; # remove line continuations
+    if ( wantarray ) {  
+        return  split /\n/x, $string
+    } else {
+        return $string;
+    }
+}
 
 1;
 __END__
