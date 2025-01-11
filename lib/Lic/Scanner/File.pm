@@ -1,11 +1,12 @@
-package Lic::Scanner::Options;
 use strict;
 use warnings;
+package Lic::File;
+
 # ABSTRACT: a really awesome library
 
 1;
 __END__
-=head1 NAME Lic::Scanner::Options
+=head1 NAME Lic::Scanner::File
 
  - 
 
@@ -15,7 +16,7 @@ This documentation refers to :: version 0.0.1
 
 =head1 SYNOPSIS
  
-    use Lic::Scanner::Options;
+    use Lic::Scanner::File;
   
 =head1 DESCRIPTION
 
@@ -49,7 +50,7 @@ Quinn Weaver <quinn@fairpath.com>
 
 =head1 LICENSE AND COPYRIGHT
  
- Copyright (c) 2025 Nicky Ayoub (<nicky.ayoub@gmail.com>). All rights reserved.
+Copyright (c) 2025 Nicky Ayoub (<nicky.ayoub@gmail.com>). All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.

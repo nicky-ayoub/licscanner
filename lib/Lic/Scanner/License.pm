@@ -5,7 +5,7 @@ use warnings;
 
 1;
 __END__
-=head1 NAME
+=head1 NAME Lic::Scanner::License
 
  - 
 
@@ -15,7 +15,7 @@ This documentation refers to :: version 0.0.1
 
 =head1 SYNOPSIS
  
-    use ::;
+    use Lic::Scanner::License;
   
 =head1 DESCRIPTION
 
