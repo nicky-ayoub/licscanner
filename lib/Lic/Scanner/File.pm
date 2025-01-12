@@ -23,6 +23,8 @@ sub slurp {
 sub processBackSlash {
     my $string = shift;
     $string =~ s/\\\s*\n//smxg; # remove line continuations
+    $string =~ s/^(?:\s*\#.*)$//mxg; # Remove Comments.
+    $string =~ s/(\n\s*)+/\n/smxg; # Remove lines.
     if ( wantarray ) {  
         return  split /\n/x, $string
     } else {
