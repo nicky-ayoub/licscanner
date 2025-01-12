@@ -10,9 +10,79 @@ sub Scan {
     my $ok = 1;
     for my $line (@lines) {
         next if ! $line;
-        if ( $line =~ /^(?i)(AUTOMATIC_REREAD)\s+((?i) ON |OFF )\s*$/sxm) {
-            my ($key, $val) = ($1, $2);
+        if ( $line =~ /^(?i)(AUTOMATIC_REREAD)\s+((?i)on|off )\s*$/sxm) {
+            my ($key, $val) = (uc($1), uc($2));
+            printf("%s %s\n", $key, $val);
             $ok = $ok and 1;
+        } elsif ( $line =~ /^(?i)(ACTIVATION_LOWWATER)\s+([a-zA-Z0-9]+) \s+ (\d+)\s*$/sxm) {   
+            my ($key, $entitlement, $count) = (uc($1), $2, 0+$3);    
+            printf("%s %s %d\n", $key, $entitlement, $count); 
+            $ok = $ok and 1;
+        } elsif ( $line =~ /^(?i)(ACTIVATION_LOWWATER)\s+ ([a-zA-Z0-9]+)\s* : \s* ([a-zA-Z0-9]+) \s* = \s*([a-zA-Z0-9]+) \s+ (\d+)\s*$/sxm) {
+            my ($key, $entitlement, $fid, $fidid, $count) = (uc($1), $2, $3, $4, 0+$5);     
+            printf("%s %s:%s=%s %d\n", $key,  $entitlement, $fid, $fidid, $count); 
+            $ok = $ok and 1;
+        } elsif ( $line =~ /^(?i)(ACTIVATION_LOWWATER)\s+  "([a-zA-Z0-9]+) \s* [:\s] \s* ([a-zA-Z0-9]+) \s* = \s* ([a-zA-Z0-9]+) \s* " \s+ (\d+)\s*$/sxm) {
+            my ($key, $entitlement, $fid, $fidid, $count) = (uc($1), $2, $3, $4, 0+$5);     
+            printf("%s %s:%s=%s %d\n", $key,  $entitlement, $fid, $fidid, $count); 
+            $ok = $ok and 1;
+        } elsif ( $line =~ /^(?i)(ACTIVATION_EXPIRY_DAYS)\s+([a-zA-Z0-9]+) \s+ (\d+)\s*$/sxm) {   
+            my ($key, $entitlement, $days) = (uc($1), $2, 0+$3);    
+            printf("%s %s %d\n", $key, $entitlement, $days); 
+            $ok = $ok and 1;
+        } elsif ( $line =~ /^(?i)(ACTIVATION_EXPIRY_DAYS)\s+ ([a-zA-Z0-9]+)\s* : \s* ([a-zA-Z0-9]+) \s* = \s*([a-zA-Z0-9]+) \s+ (\d+)\s*$/sxm) {
+            my ($key, $entitlement, $fid, $fidid, $days) = (uc($1), $2, $3, $4, 0+$5);     
+            printf("%s %s:%s=%s %d\n", $key,  $entitlement, $fid, $fidid, $days); 
+            $ok = $ok and 1;
+        } elsif ( $line =~ /^(?i)(ACTIVATION_EXPIRY_DAYS)\s+  "([a-zA-Z0-9]+) \s* [:\s] \s* ([a-zA-Z0-9]+) \s* = \s* ([a-zA-Z0-9]+) \s* " \s+ (\d+)\s*$/sxm) {
+            my ($key, $entitlement, $fid, $fidid, $days) = (uc($1), $2, $3, $4, 0+$5);     
+            printf("%s %s:%s=%s %d\n", $key,  $entitlement, $fid, $fidid, $days); 
+            $ok = $ok and 1;
+        }  elsif ( $line =~ /^(?i)(BORROW_LOWWATER)\s+([a-zA-Z0-9]+) \s+ (\d+)\s*$/sxm) {   
+            my ($key, $feature, $count) = (uc($1), $2, 0+$3);    
+            printf("%s %s %d\n", $key, $feature, $count); 
+            $ok = $ok and 1;
+        } elsif ( $line =~ /^(?i)(BORROW_LOWWATER)\s+ ([a-zA-Z0-9]+)\s* : \s* ([a-zA-Z0-9]+) \s* = \s*([a-zA-Z0-9]+) \s+ (\d+)\s*$/sxm) {
+            my ($key, $feature, $fid, $fidid, $count) = (uc($1), $2, $3, $4, 0+$5);     
+            printf("%s %s:%s=%s %d\n", $key,  $feature, $fid, $fidid, $count); 
+            $ok = $ok and 1;
+        } elsif ( $line =~ /^(?i)(BORROW_LOWWATER)\s+  "([a-zA-Z0-9]+) \s* [:\s] \s* ([a-zA-Z0-9]+) \s* = \s* ([a-zA-Z0-9]+) \s* " \s+ (\d+)\s*$/sxm) {
+            my ($key, $feature, $fid, $fidid, $count) = (uc($1), $2, $3, $4, 0+$5);     
+            printf("%s %s:%s=%s %d\n", $key,  $feature, $fid, $fidid, $count); 
+            $ok = $ok and 1;
+        } elsif ( $line =~ /^(?i)(DAEMON_SELECT_TIMEOUT)\s+ (\d+)\s*$/sxm) {   
+            my ($key, $seconds) = (uc($1),0+$2);    
+            printf("%s %d\n", $key, $seconds); 
+            $ok = $ok and 1;
+        } elsif ( $line =~ /^(?i)(DEBUGLOG)\s+ (\+)? (\S+)/sxm) { 
+            my $orig = $line;
+            $line =~ s/^(?i)(DEBUGLOG)\s+ (\+)? (\S+)//sxm;
+            my $key="DEBUGLOG";
+            my $plus = $2; 
+            my $path = $3;
+            my $OBF_ADDMARK;
+            if ($line =~ s/(?i)\s*(OBF_ADDMARK)\s*//sxm) {
+                $OBF_ADDMARK="OBF_ADDMARK"
+            }
+            my $AUTO_ROLLOVER ;
+            my $AUTO_ROLLOVER_SIZE ;
+            if ($line =~ s/(?i)\s*(AUTO_ROLLOVER)\s+(\d+)\s*//sxm) {
+                $AUTO_ROLLOVER_SIZE = 0 + $2;
+                $AUTO_ROLLOVER="AUTO_ROLLOVER";
+            }
+            my $str ="";
+            $line =~ s/\s//g;
+            if ($line) {
+                $ok = 0;
+                #printf (STDERR "Remainder : '%s'\n", $orig);
+            } else {
+                my $str = sprintf ("%s %s", $key, $path);
+                $str .= " OBF_ADDMARK" if $OBF_ADDMARK;
+                $str .= " AUTO_ROLLOVER $AUTO_ROLLOVER_SIZE" if  $AUTO_ROLLOVER;
+                $str .= " # with append..." if defined $plus;
+                printf("%s\n", $str);
+                $ok = $ok and 1;
+            }
         } else {
             printf ("Unhandled Option : '%s'\n", $line);
             $ok = 0;
