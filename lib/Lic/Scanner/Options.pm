@@ -2,7 +2,7 @@ package Lic::Scanner::Options;
 use strict;
 use warnings;
 # ABSTRACT: Flex License Manager Options
-
+use Lic::Scanner::File;
 
 sub Scan {
     my $input = shift;
