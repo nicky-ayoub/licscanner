@@ -40,6 +40,7 @@ sub Scan {
     my $ok = 1;
     for my $line (@lines) {
         next if ! $line;
+        #print(STDERR "'$line'\n");
         if ( $line =~ /^(AUTOMATIC_REREAD)\s+(on|off )\s*$/isxm) {
             my ($key, $val) = (uc($1), uc($2));
             printf("%s %s\n", $key, $val);
@@ -74,35 +75,35 @@ sub Scan {
             my ($key, $seconds) = (uc($1),0+$2);    
             printf("%s %d\n", $key, $seconds); 
             $ok = $ok and 1;
-        } elsif ( $line =~ /^(?i)(DEBUGLOG)\s+ (\+)? (\S+)/sxm) { 
-            my $orig = $line;
-            $line =~ s/^(?i)(DEBUGLOG)\s+ (\+)? (\S+)//sxm;
+        } elsif ( $line =~ s{^(DEBUGLOG) \s+ (\+)? (\S+)}{}isxm) { 
             my $key="DEBUGLOG";
             my $plus = $2; 
             my $path = $3;
+
             my $OBF_ADDMARK;
-            if ($line =~ s/\s*(?i)(OBF_ADDMARK)\s*//sxm) {
+            if ($line =~ s{\bOBF_ADDMARK\b}{}isxm) {
                 $OBF_ADDMARK="OBF_ADDMARK"
             }
+           
             my $AUTO_ROLLOVER ;
             my $AUTO_ROLLOVER_SIZE ;
-            if ($line =~ s/(?i)\s*(AUTO_ROLLOVER)\s+(\d+)\s*//sxm) {
-                $AUTO_ROLLOVER_SIZE = 0 + $2;
+            if ($line =~ s{\bAUTO_ROLLOVER\s+(\d+)\s*}{}isxm) {
+                $AUTO_ROLLOVER_SIZE = 0 + $1;
                 $AUTO_ROLLOVER="AUTO_ROLLOVER";
             }
-            my $str ="";
-            $line =~ s/\s//g;
-            if ($line) {
+    
+            $line =~ s{\s+}{}g;
+            if ($line) { # is there anything left?
                 $ok = 0;
-                #printf (STDERR "Remainder : '%s'\n", $orig);
-            } else {
-                my $str = sprintf ("%s %s", $key, $path);
-                $str .= " OBF_ADDMARK" if $OBF_ADDMARK;
-                $str .= " AUTO_ROLLOVER $AUTO_ROLLOVER_SIZE" if  $AUTO_ROLLOVER;
-                $str .= " # with append..." if defined $plus;
-                printf("%s\n", $str);
-                $ok = $ok and 1;
-            }
+                next;
+            } 
+            
+            my $str = sprintf ("%s %s%s", $key, (defined $plus ? "+" : ""), $path);
+            $str .= " OBF_ADDMARK" if $OBF_ADDMARK;
+            $str .= " AUTO_ROLLOVER $AUTO_ROLLOVER_SIZE" if  $AUTO_ROLLOVER;
+            $str .= " # with append..." if defined $plus;
+            printf("%s\n", $str);
+            $ok = $ok and 1;
          } elsif ( $line =~ /^(?i)((?:IN|EX)CLUDE(?:_BORROW)?)\s+ $featurepat \s+ (?<type>USER|HOST|DISPLAY|INTERNET|PROJECT|GROUP|HOST_GROUP)\s+(?<name>\S+)\s*$/sxm) {
             if (defined $+{keyword} ) {
                 my ($key, $feature, $keyward, $value, $type, $name) = (uc($1), $+{feature},$+{keyword}, $+{value}, $+{type}, $+{name} );     

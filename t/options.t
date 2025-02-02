@@ -2,7 +2,7 @@ use Test::More;
 
 require_ok( 'Lic::Scanner::Options' );
 
-@tests = (
+ my @tests = (
   # AUTOMATIC_REREAD
   ['AUTOMATIC_REREAD ON', "# This is a OK\nAUTOMATIC_REREAD ON\n", 1],
   ['AUTOMATIC_REREAD OFF', "# This is a OK\nAUTOMATIC_REREAD OFF\n", 1],
