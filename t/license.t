@@ -15,8 +15,13 @@ require_ok( 'Lic::Scanner::License' );
   ['Server no hostid', "# This is a bad\nServer host\n",0],
   ['Server host hostid bad_opt', "# This is a bad\nServer host hostid bad_opt\n",0],
   ['Server  primary_is_master twice', "# This is a bad\nServer host hostid primary_is_master heartbeat_interval=78 primary_is_master\n",0],
+  
   ['Feature', "FEATURE feature vendor feat_version exp_date num_lic VENDOR_STRING=\"this is a vendor string\" \\\n AUTH={ a=\"str\" b=(a b c) sign3=\"x y x\"} SIGN=\"<...>\"\n",1],
 
+  ['Vendor minimal', "VENDOR vendor\n",1],
+  ['Vendor minimal', "VENDOR vendor a/daemon/path\n",1],
+  ['Vendor minimal', "VENDOR vendor a/daemon/path options/file\n",1],
+  ['Vendor minimal', "VENDOR vendor a/daemon/path options/file 4321\n",1],
 
  );
 
