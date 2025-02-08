@@ -2,56 +2,82 @@ package Lic::Scanner::License;
 use strict;
 use warnings;
 use 5.36.0;
+use List::UtilsBy qw( extract_by );
 # ABSTRACT: Flex License Manager File Scanner
 use Lic::Scanner::File;
+use Lic::Scanner::Chunker;
 
-sub Scan { 
+sub Scan {
     my $input = shift;
     my @lines = Lic::Scanner::File::processBackSlash($input);
-    my $ok = 1;
+    my $ok    = 1;
     for my $line (@lines) {
-        next if ! $line;
-        #print(STDERR "'$line'\n");
-        if ( $line =~ m{^Server}isxm) {
-            if ( $line =~ s{^(Server)\s+(\S+)\s+(\S+)\s*}{}isxm) {
-                my $host  = $2;
-                my $hostid = $3;
+        next if !$line;
 
-                my $primary_is_master;
-                if ($line =~ s{\bprimary_is_master\b}{}isxm) {
-                    $primary_is_master="primary_is_master"
-                }
-                
-                my $heartbeat_interval ;
-                my $heartbeat_interval_seconds ;
-                if ($line =~ s{\bheartbeat_interval\s*=\s*(\d+)\s*}{}isxm) {
-                    $heartbeat_interval_seconds = 0 + $1;
-                    $heartbeat_interval="HEARTBEAT_INTERVAL";
-                }
-                my $port = "";
-                if ($line =~ s{\b(\d+)\s*}{}isxm) {
-                    $port = 0 + $1;
-                }
-                if ($line !~ m{^\s*$}) {
-                    $ok = 0;
-                    next
-                }
-                
-                $ok = $ok and 1;
-                my $str = "SERVER $host $hostid";
-                $str .= " $port" if $port;
-                $str .= " $primary_is_master" if $primary_is_master;
-                $str .= " $heartbeat_interval=$heartbeat_interval_seconds" if $heartbeat_interval;
-                printf("-i- %s\n", $str);
-            } else {
-                printf ("-e- Server not enough arguments : '%s'\n", $line);
+        #print(STDERR "'$line'\n");
+        my @elements = Lic::Scanner::Chunker::chunker($line);
+
+        my %attrs;
+        if ( ref $elements[-1] eq ref {}) {
+            %attrs = %{$elements[-1]};
+            pop @elements;
+        }
+        if ( $elements[0] eq "SERVER" ) {
+            my $command = shift @elements;
+            my $host    = shift @elements;
+            my $hostid = shift @elements;
+            unless ( $host ) {
+                printf( "-e- No Host : '%s'\n", $line );
                 $ok = 0;
+                next;
             }
-        } else {
-            printf ("-e- Unhandled Option : '%s'\n", $line);
+            unless ( $hostid ) {
+                printf( "-e- No Hostid : '%s'\n", $line );
+                $ok = 0;
+                next;
+            }
+            my @removedElements = extract_by { uc() eq 'PRIMARY_IS_MASTER' } @elements;
+            if ( scalar @removedElements > 1 ) {
+                printf( "-e- Duplicate PRIMARY_IS_MASTER : '%s'\n", $line );
+                $ok = 0;
+                next;
+            }
+            my $primary_is_master =  @removedElements;
+            my $port = shift @elements;
+            if ( $port and $port !~ /^\d+$/ ) {
+                printf( "-e- Invalid Port : '%s'\n", $line );
+                $ok = 0;
+                next;
+            }
+            if (@elements) {
+                printf( "-e- Unhandled Options : '%s'\n", $line );
+                $ok = 0;
+                next;
+            }
+            foreach my $key (keys %attrs) {
+                if ( uc($key) eq 'HEARTBEAT_INTERVAL' ) {
+                    my $value = $attrs{$key}->[1];
+                    if ( $value !~ /^\d+$/ ) {
+                        printf( "-e- Invalid HEARTBEAT_INTERVAL value '%d' : '%s'\n", $value, $line );
+                        $ok = 0;
+                        next;
+                    }
+                } else {
+                    print( "-e- Unhandled Option Key '$key': '$line'\n");
+                    $ok = 0;
+                }
+            }
+            $ok = $ok and 1;
+        }
+        elsif ( $elements[0] eq "FEATURE" ) {
+            $ok = $ok and 1;
+        }
+        else {
+            printf( "-e- Unhandled Option : '%s'\n", $line );
             $ok = 0;
         }
     }
+
     # Empty returns 1;
     return $ok;
 }
