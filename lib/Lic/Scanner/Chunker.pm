@@ -23,9 +23,10 @@ sub chunker {
     return () if !$line;
 
     my @extracted = extract_multiple( $line,
-        [ \&extract_bracketed, \&extract_quotelike, qr/\s*=\s*/, qr/\s+/, ] );
+        [ \&extract_bracketed, sub { extract_delimited($_[0],q{'"}) } , qr/\s*=\s*/, qr/\s+/, ] );
     @extracted = grep { !/^\s+$/ } @extracted;
     $extracted[0] = uc( $extracted[0] );           # Normalize the first element
+
     my %attrs = Lic::Scanner::Chunker::hasher(\@extracted);
     push @extracted, \%attrs if %attrs;
     say Data::Dumper::Dumper( \@extracted );
