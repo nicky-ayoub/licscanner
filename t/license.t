@@ -47,6 +47,11 @@ require_ok( 'Lic::Scanner::License' );
  ['Feature', "FEATURE featurename vendor 2023.111 0000 uncounted VENDOR_STRING=\"this is a vendor string\" \\\n AUTH={ a=\"str\" b=(a b c) sign3=\"x y x\"} SIGN=\"<...>\"\n",1],
  ['Feature', "FEATURE featurename vendor 2023.111 31-dec-2024 uncounted VENDOR_STRING=\"this is a vendor string\" \\\n AUTH={ a=\"str\" b=(a b c) sign3=\"x y x\"} SIGN=\"<...>\"\n",1],
  ['Feature', "FEATURE featurename vendor 2023.111 permanent uncounted VENDOR_STRING=\"this is a vendor string\" \\\n AUTH={ a=\"str\" b=(a b c) sign3=\"x y x\"} SIGN=\"<...>\"\n",1],
+  ['Increment', "Increment featurename vendor 2023.111 31-dec-2024 15 VENDOR_STRING=\"this is a vendor string\" \\\n AUTH={ a=\"str\" b=(a b c) sign3=\"x y x\"} SIGN=\"<...>\"\n",1],
+  ['Increment', "Increment featurename vendor 2023.111 31-dec-2024 uncounted VENDOR_STRING=\"this is a vendor string\" \\\n AUTH={ a=\"str\" b=(a b c) sign3=\"x y x\"} SIGN=\"<...>\"\n",1],
+ ['Increment', "Increment featurename vendor 2023.111 0000 uncounted VENDOR_STRING=\"this is a vendor string\" \\\n AUTH={ a=\"str\" b=(a b c) sign3=\"x y x\"} SIGN=\"<...>\"\n",1],
+ ['Increment', "Increment featurename vendor 2023.111 31-dec-2024 uncounted VENDOR_STRING=\"this is a vendor string\" \\\n AUTH={ a=\"str\" b=(a b c) sign3=\"x y x\"} SIGN=\"<...>\"\n",1],
+ ['Increment', "Increment featurename vendor 2023.111 permanent uncounted VENDOR_STRING=\"this is a vendor string\" \\\n AUTH={ a=\"str\" b=(a b c) sign3=\"x y x\"} SIGN=\"<...>\"\n",1],
 
  );
 

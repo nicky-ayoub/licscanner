@@ -32,7 +32,7 @@ sub Scan {
         elsif ( $elements[0] eq "USE_SERVER" ) {
             $ok = $ok && _useserver( $line, \@elements, \%attrs );
         }
-        elsif ( $elements[0] eq "FEATURE" ) {
+        elsif ( $elements[0] eq "FEATURE"  or $elements[0] eq "INCREMENT"  ) {
             $ok = $ok && _feature( $line, \@elements, \%attrs );
         }
         else {
