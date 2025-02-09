@@ -95,11 +95,17 @@ sub _server {
         printf( "-e- Too many parameters or invalid option: %s\n", $line );
         return 0;
     }
-    $port               //= "''";
-    $heartbeat_interval //= "''";
-    $primary_is_master  //= "''";
-    printf( ">>> $command: %s, Hostid: %s, Primary_is_master: %s, Port: %s\n",
-        $host, $hostid, $primary_is_master, $port );
+    $port               ||= "";
+    $heartbeat_interval ||= "";
+    $primary_is_master  ||= "";
+    if ($heartbeat_interval) {
+        $heartbeat_interval = "HEARTBEAT_INTERVAL='$heartbeat_interval'";
+    }
+    if ($primary_is_master) {
+        $primary_is_master = "PRIMARY_IS_MASTER";
+    }
+    printf( "$command %s %s %s %s %s\n",
+        $host, $hostid, $port, $primary_is_master, $heartbeat_interval );
 
     return 1;
 }
@@ -156,11 +162,16 @@ sub _vendor {
         printf( "-e- Invalid Port  $port: '%s'\n", $line );
         return 0;
     }
-    $port       //= "''";
-    $options    //= "''";
-    $daemonpath //= "''";
-    printf( ">>> $command: %s, Daemonpath: %s, Options: %s, Port: %s\n",
-        $vendor, $daemonpath, $options, $port );
+    $port       //= "";
+    $options    //= "";
+    $daemonpath //= "";
+    if ($port) {
+        $port = "PORT='$port'";
+    } 
+    if ($options) {
+        $options = "OPTIONS='$options'";
+    }   
+    printf( "$command %s %s %s %s\n", $vendor, $daemonpath, $options, $port );
 
     return 1;
 }
@@ -175,7 +186,7 @@ sub _useserver {
         printf( "-e- USE_SERVER to many parameters : '%s'\n", $line );
         return 0;
     }
-
+    printf("$command\n");
     return 1;
 }
 
@@ -228,12 +239,12 @@ sub _feature {
         printf( "-e- Unhandled Options : '%s'\n", $line );
         return 0;
     }
-    printf(
-">>> $command: %s, Vendor: %s, Feature Version: %s, Expiration Date: %s, Number of Licenses: %s\n",
+    printf( "$command %s %s %s %s %s ",
         $feature, $vendor, $feat_version, $exp_date, $num_lic );
     foreach my $kv (@kvs) {
-        printf( "\t %s: %s\n", $kv->[0], $kv->[1] );
+        printf( "%s=%s ", $kv->[0], $kv->[1] );
     }
+    say "";
 
     return 1;
 
@@ -248,21 +259,23 @@ sub _package {
     my $vendor  = shift @$elements;
     my $package_version;
 
-    if (ref $elements->[0] ne ref []) {
+    if ( ref $elements->[0] ne ref [] ) {
         $package_version = shift @$elements;
     }
 
-    my @kvs = extract_by { ref $_ eq ref [] } @$elements;   # extract key value pairs
+    my @kvs =
+      extract_by { ref $_ eq ref [] } @$elements;    # extract key value pairs
 
-    if ( @$elements ) {
-        printf( "-e- PACKAGE extra parameters : %s\n'%s'\n", "@$elements", $line );
+    if (@$elements) {
+        printf( "-e- PACKAGE extra parameters : %s\n'%s'\n",
+            "@$elements", $line );
         return 0;
     }
-    printf( ">>> $command: %s, Vendor: %s, Package Version: %s\n",
-        $package, $vendor, $package_version );
-    foreach my $kv (@kvs) {                           
-        printf( "\t %s: %s\n", $kv->[0], $kv->[1] );
+    printf( "$command %s %s %s ", $package, $vendor, $package_version );
+    foreach my $kv (@kvs) {
+        printf( "%s='%s' ", $kv->[0], $kv->[1] );
     }
+    say "";
 
     return 1;
 }
@@ -321,12 +334,12 @@ sub _upgrade {
         printf( "-e- Unhandled Options : '%s'\n", $line );
         return 0;
     }
-    printf(
-">>> $command: %s, Vendor: %s, From: %s, To: %s, Expiration Date: %s, Number of Licenses: %s\n",
+    printf( "$command: %s %s %s %s %s %s ",
         $feature, $vendor, $from, $to, $exp_date, $num_lic );
     foreach my $kv (@kvs) {
-        printf( "\t %s: %s\n", $kv->[0], $kv->[1] );
+        printf( "%s='%s' ", $kv->[0], $kv->[1] );
     }
+    say "";
 
     return 1;
 }
