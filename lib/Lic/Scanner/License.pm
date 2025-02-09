@@ -27,7 +27,10 @@ sub Scan {
             $ok = $ok && _server( $line, \@elements, \%attrs );
         }
         elsif ( $elements[0] eq "VENDOR" ) {
-            $ok = $ok && _vendor( $line, \@elements, \%attrs );;
+            $ok = $ok && _vendor( $line, \@elements, \%attrs );
+        }
+        elsif ( $elements[0] eq "USE_SERVER" ) {
+            $ok = $ok && _useserver( $line, \@elements, \%attrs );
         }
         elsif ( $elements[0] eq "FEATURE" ) {
             $ok = $ok && 1;
@@ -47,9 +50,9 @@ sub _server {
     my $elements = shift;
     my $attrs    = shift;
 
-    my $command  = shift @$elements;
-    my $host     = shift @$elements;
-    my $hostid   = shift @$elements;
+    my $command = shift @$elements;
+    my $host    = shift @$elements;
+    my $hostid  = shift @$elements;
 
     unless ($host) {
         printf( "-e- No Host : '%s'\n", $line );
@@ -95,13 +98,71 @@ sub _vendor {
     my $line     = shift;
     my $elements = shift;
     my $attrs    = shift;
-    
-    my $command  = shift @$elements;
-    my $vendor     = shift @$elements;
-   
+
+    my $command = shift @$elements;
+    my $vendor  = shift @$elements;
+    my $port;
+    my $options;
+    my $daemonpath;
 
     unless ($vendor) {
         printf( "-e- No Host : '%s'\n", $line );
+        return 0;
+    }
+    $port    = $attrs->{PORT}->[1]    if defined $attrs->{PORT};
+    $options = $attrs->{OPTIONS}->[1] if defined $attrs->{OPTIONS};
+    delete $attrs->{PORT}    if defined $attrs->{PORT};
+    delete $attrs->{OPTIONS} if defined $attrs->{OPTIONS};
+    if ( keys %$attrs ) {
+        printf( "-e- Unhandled keys : '%s'\n", join ', ', keys %$attrs );
+        return 0;
+    }
+
+    if ( $port and $options ) {
+
+        if (@$elements) {    # Must be a path
+            $daemonpath = shift @$elements;
+            if (@$elements) {
+                printf( "-e- Too many params : '%s'\n", $line );
+                return 0;
+            }
+        }
+    }
+    else {
+        $daemonpath = shift @$elements;
+        if (!$options) {
+            $options = shift @$elements;
+        }        
+        if (!$port) {
+            $port = shift @$elements;
+        }
+    }
+    if ( $port && $port !~ /^\d+$/ ) {
+        printf( "-e- Invalid Port  $port: '%s'\n", $line );
+        return 0;
+    }
+    $port       //= "''";
+    $options    //= "''";
+    $daemonpath //= "''";
+    printf( ">>> $command: %s, Daemonpath: %s, Options: %s, Port: %s\n",
+        $vendor, $daemonpath, $options, $port );
+
+    return 1;
+}
+
+sub _useserver {
+    my $line     = shift;
+    my $elements = shift;
+    my $attrs    = shift;
+
+    my $command = shift @$elements;
+
+    if (@$elements) {
+        printf( "-e- USE_SERVER to many parameters : '%s'\n", $line );
+        return 0;
+    }
+    if (keys %$attrs) {
+        printf( "-e- USE_SERVER to many options : '%s'\n", $line );
         return 0;
     }
     return 1;
