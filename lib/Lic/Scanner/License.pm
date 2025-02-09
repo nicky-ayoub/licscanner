@@ -15,25 +15,25 @@ sub Scan {
     for my $line (@lines) {
         next if !$line;
 
-        #print(STDERR "'$line'\n");
         my @elements = Lic::Scanner::Chunker::chunker($line);
 
-        my %attrs;
-        if ( ref $elements[-1] eq ref {} ) {
-            %attrs = %{ $elements[-1] };
-            pop @elements;
-        }
         if ( $elements[0] eq "SERVER" ) {
-            $ok = $ok && _server( $line, \@elements, \%attrs );
+            $ok = $ok && _server( $line, \@elements, );
         }
         elsif ( $elements[0] eq "VENDOR" ) {
-            $ok = $ok && _vendor( $line, \@elements, \%attrs );
+            $ok = $ok && _vendor( $line, \@elements, );
         }
         elsif ( $elements[0] eq "USE_SERVER" ) {
-            $ok = $ok && _useserver( $line, \@elements, \%attrs );
+            $ok = $ok && _useserver( $line, \@elements, );
         }
-        elsif ( $elements[0] eq "FEATURE"  or $elements[0] eq "INCREMENT"  ) {
-            $ok = $ok && _feature( $line, \@elements, \%attrs );
+        elsif ( $elements[0] eq "FEATURE" or $elements[0] eq "INCREMENT" ) {
+            $ok = $ok && _feature( $line, \@elements, );
+        }
+        elsif ( $elements[0] eq "PACKAGE" ) {
+            $ok = $ok && _package( $line, \@elements, );
+        }
+        elsif ( $elements[0] eq "UPGRADE" ) {
+            $ok = $ok && _upgrade( $line, \@elements, );
         }
         else {
             printf( "-e- Unhandled Option : '%s'\n", $line );
@@ -48,7 +48,6 @@ sub Scan {
 sub _server {
     my $line     = shift;
     my $elements = shift;
-    my $attrs    = shift;
 
     my $command = shift @$elements;
     my $host    = shift @$elements;
@@ -68,36 +67,46 @@ sub _server {
         return 0;
     }
     my $primary_is_master = @removedElements;
-    my $port              = shift @$elements;
+    my $port;
+    if ( ref $elements->[0] ne ref [] ) {
+        $port = shift @$elements;
+    }
     if ( $port and $port !~ /^\d+$/ ) {
         printf( "-e- Invalid Port : '%s'\n", $line );
         return 0;
     }
-    if (@$elements) {
-        printf( "-e- Unhandled Options : '%s'\n", $line );
-        return 0;
-    }
-    foreach my $key ( keys %$attrs ) {
-        if ( uc($key) eq 'HEARTBEAT_INTERVAL' ) {
-            my $value = $attrs->{$key}->[1];
-            if ( $value !~ /^\d+$/ ) {
+    my $heartbeat_interval;
+    if ( ref $elements->[0] eq ref [] ) {
+        my $kv = shift @$elements;
+        if ( $kv->[0] eq 'HEARTBEAT_INTERVAL' ) {
+            $heartbeat_interval = $kv->[1];
+            if ( $heartbeat_interval !~ /^\d+$/ ) {
                 printf( "-e- Invalid HEARTBEAT_INTERVAL value '%d' : '%s'\n",
-                    $value, $line );
+                    $heartbeat_interval, $line );
                 return 0;
             }
         }
         else {
-            print("-e- Unhandled Option Key '$key': '$line'\n");
+            printf( "-e- Unhandled Option %s : '%s'\n", $kv->[0], $line );
             return 0;
         }
     }
+    if (@$elements) {
+        printf( "-e- Too many parameters or invalid option: %s\n", $line );
+        return 0;
+    }
+    $port               //= "''";
+    $heartbeat_interval //= "''";
+    $primary_is_master  //= "''";
+    printf( ">>> $command: %s, Hostid: %s, Primary_is_master: %s, Port: %s\n",
+        $host, $hostid, $primary_is_master, $port );
+
     return 1;
 }
 
 sub _vendor {
     my $line     = shift;
     my $elements = shift;
-    my $attrs    = shift;
 
     my $command = shift @$elements;
     my $vendor  = shift @$elements;
@@ -109,34 +118,40 @@ sub _vendor {
         printf( "-e- No Host : '%s'\n", $line );
         return 0;
     }
-    $port    = $attrs->{PORT}->[1]    if defined $attrs->{PORT};
-    $options = $attrs->{OPTIONS}->[1] if defined $attrs->{OPTIONS};
-    delete $attrs->{PORT}    if defined $attrs->{PORT};
-    delete $attrs->{OPTIONS} if defined $attrs->{OPTIONS};
-    if ( keys %$attrs ) {
-        printf( "-e- Unhandled keys : '%s'\n", join ', ', keys %$attrs );
-        return 0;
-    }
-
-    if ( $port and $options ) {
-
-        if (@$elements) {    # Must be a path
-            $daemonpath = shift @$elements;
-            if (@$elements) {
-                printf( "-e- Too many params : '%s'\n", $line );
-                return 0;
+    if ( ref $elements->[0] ne ref [] ) {
+        $daemonpath = shift @$elements;
+        if ( ref $elements->[0] ne ref [] ) {
+            $options = shift @$elements;
+            if ( ref $elements->[0] ne ref [] ) {
+                $port = shift @$elements;
             }
         }
     }
-    else {
-        $daemonpath = shift @$elements;
-        if ( !$options ) {
-            $options = shift @$elements;
+    for my $kv (@$elements) {
+        if ( ref $kv ne ref [] ) {
+            printf( "-e- Only Options should remain : '%s'\n", $line );
+            return 0;
         }
-        if ( !$port ) {
-            $port = shift @$elements;
+        elsif ( $kv->[0] eq 'OPTIONS' ) {
+            if ($options) {
+                printf( "-e- Duplicate OPTIONS : '%s'\n", $line );
+                return 0;
+            }
+            $options = $kv->[1];
+        }
+        elsif ( $kv->[0] eq 'PORT' ) {
+            if ($port) {
+                printf( "-e- Duplicate PORT : '%s'\n", $line );
+                return 0;
+            }
+            $port = $kv->[1];
+        }
+        else {
+            printf( "-e- Unhandled Option %s : '%s'\n", $kv->[0], $line );
+            return 0;
         }
     }
+
     if ( $port && $port !~ /^\d+$/ ) {
         printf( "-e- Invalid Port  $port: '%s'\n", $line );
         return 0;
@@ -153,7 +168,6 @@ sub _vendor {
 sub _useserver {
     my $line     = shift;
     my $elements = shift;
-    my $attrs    = shift;
 
     my $command = shift @$elements;
 
@@ -161,17 +175,13 @@ sub _useserver {
         printf( "-e- USE_SERVER to many parameters : '%s'\n", $line );
         return 0;
     }
-    if ( keys %$attrs ) {
-        printf( "-e- USE_SERVER to many options : '%s'\n", $line );
-        return 0;
-    }
+
     return 1;
 }
 
 sub _feature {
     my $line     = shift;
     my $elements = shift;
-    my $attrs    = shift;
 
     my $command      = shift @$elements;
     my $feature      = shift @$elements;
@@ -197,7 +207,10 @@ sub _feature {
         printf( "-e- No Expiration Date : '%s'\n", $line );
         return 0;
     }
-    if ( $exp_date !~ /^0{1,4}$/ and lc($exp_date) ne 'permanent' and  $exp_date !~ /^\d{1,2}-[a-z]{3}-\d{4}$/) {
+    if (    $exp_date !~ /^0{1,4}$/
+        and lc($exp_date) ne 'permanent'
+        and $exp_date !~ /^\d{1,2}-[a-z]{3}-\d{4}$/ )
+    {
         printf( "-e- Invalid Expiration Date $exp_date : '%s'\n", $line );
         return 0;
     }
@@ -209,6 +222,8 @@ sub _feature {
         printf( "-e- Invalid Number of Licenses $num_lic : '%s'\n", $line );
         return 0;
     }
+
+    my @kvs = extract_by { ref $_ eq ref [] } @$elements;
     if (@$elements) {
         printf( "-e- Unhandled Options : '%s'\n", $line );
         return 0;
@@ -216,13 +231,104 @@ sub _feature {
     printf(
 ">>> $command: %s, Vendor: %s, Feature Version: %s, Expiration Date: %s, Number of Licenses: %s\n",
         $feature, $vendor, $feat_version, $exp_date, $num_lic );
-    for my $attr ( keys %$attrs ) {
-        my $value = $attrs->{$attr}->[1];
-        print "\t+ $attr=$value\n";
+    foreach my $kv (@kvs) {
+        printf( "\t %s: %s\n", $kv->[0], $kv->[1] );
     }
 
     return 1;
 
+}
+
+sub _package {
+    my $line     = shift;
+    my $elements = shift;
+
+    my $command = shift @$elements;
+    my $package = shift @$elements;
+    my $vendor  = shift @$elements;
+    my $package_version;
+
+    if (ref $elements->[0] ne ref []) {
+        $package_version = shift @$elements;
+    }
+
+    my @kvs = extract_by { ref $_ eq ref [] } @$elements;   # extract key value pairs
+
+    if ( @$elements ) {
+        printf( "-e- PACKAGE extra parameters : %s\n'%s'\n", "@$elements", $line );
+        return 0;
+    }
+    printf( ">>> $command: %s, Vendor: %s, Package Version: %s\n",
+        $package, $vendor, $package_version );
+    foreach my $kv (@kvs) {                           
+        printf( "\t %s: %s\n", $kv->[0], $kv->[1] );
+    }
+
+    return 1;
+}
+
+sub _upgrade {
+    my $line     = shift;
+    my $elements = shift;
+
+    my $command  = shift @$elements;
+    my $feature  = shift @$elements;
+    my $vendor   = shift @$elements;
+    my $from     = shift @$elements;
+    my $to       = shift @$elements;
+    my $exp_date = shift @$elements;
+    my $num_lic  = shift @$elements;
+
+    unless ($feature) {
+        printf( "-e- No Feature : '%s'\n", $line );
+        return 0;
+    }
+    unless ($vendor) {
+        printf( "-e- No Vendor : '%s'\n", $line );
+        return 0;
+    }
+    unless ($from) {
+        printf( "-e- No From Feature Version : '%s'\n", $line );
+        return 0;
+    }
+    unless ($to) {
+        printf( "-e- No To Feature Version : '%s'\n", $line );
+        return 0;
+    }
+    unless ($exp_date) {
+        printf( "-e- No Expiration Date : '%s'\n", $line );
+        return 0;
+    }
+    if (    $exp_date !~ /^0{1,4}$/
+        and lc($exp_date) ne 'permanent'
+        and $exp_date !~ /^\d{1,2}-[a-z]{3}-\d{4}$/ )
+    {
+        printf( "-e- Invalid Expiration Date $exp_date : '%s'\n", $line );
+        return 0;
+    }
+    unless ($num_lic) {
+        printf( "-e- No Number of Licenses : '%s'\n", $line );
+        return 0;
+    }
+    if ( $num_lic !~ /^\d+$/ and lc($num_lic) ne 'uncounted' ) {
+        printf( "-e- Invalid Number of Licenses $num_lic : '%s'\n", $line );
+        return 0;
+    }
+
+    my @kvs = extract_by { ref $_ eq ref [] } @$elements;
+
+    if (@$elements) {
+        printf( "-e- Unhandled Options : '%s'\n", $line );
+        return 0;
+    }
+    printf(
+">>> $command: %s, Vendor: %s, From: %s, To: %s, Expiration Date: %s, Number of Licenses: %s\n",
+        $feature, $vendor, $from, $to, $exp_date, $num_lic );
+    foreach my $kv (@kvs) {
+        printf( "\t %s: %s\n", $kv->[0], $kv->[1] );
+    }
+
+    return 1;
 }
 1;
 __END__
