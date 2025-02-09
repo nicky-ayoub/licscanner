@@ -19,9 +19,30 @@ require_ok( 'Lic::Scanner::License' );
   ['Feature', "FEATURE feature vendor feat_version exp_date num_lic VENDOR_STRING=\"this is a vendor string\" \\\n AUTH={ a=\"str\" b=(a b c) sign3=\"x y x\"} SIGN=\"<...>\"\n",1],
 
   ['Vendor minimal', "VENDOR vendor\n",1],
-  ['Vendor minimal', "VENDOR vendor a/daemon/path\n",1],
-  ['Vendor minimal', "VENDOR vendor a/daemon/path options/file\n",1],
-  ['Vendor minimal', "VENDOR vendor a/daemon/path options/file 4321\n",1],
+  ['Vendor D', "VENDOR vendor a/daemon/path\n",1],
+  ['Vendor D O', "VENDOR vendor a/daemon/path options/file\n",1],
+  ['Vendor D O P', "VENDOR vendor a/daemon/path options/file 4321\n",1],
+  ['Vendor D P', "VENDOR vendor a/daemon/path 4321\n",1],
+  ['Vendor D O P=', "VENDOR vendor a/daemon/path options/file port=4321\n",1],
+  ['Vendor D O= P', "VENDOR vendor a/daemon/path options=options/file 4321\n",1],
+  ['Vendor D O= P=', "VENDOR vendor a/daemon/path options=options/file port=4321\n",1],
+  ['Vendor D O= P= extra', "VENDOR vendor a/daemon/path options=options/file port=4321 extra\n",0],
+  ['Vendor no daemon O=', "VENDOR vendor options=options/file\n",1],
+  ['Vendor no daemon P=', "VENDOR vendor port=4321\n",1],
+  ['Vendor no daemon O= P=', "VENDOR vendor options=options/file port=4321\n",1],
+  ['Vendor no daemon P', "VENDOR vendor 4321\n",1],  # presents as a vendor daemon
+  ['Vendor no daemon O', "VENDOR vendor options/file\n",1], # presents as a vendor daemon
+  ['Vendor nodaemon O P=', "VENDOR vendor an/options/file port=4321\n",1],# presents as a vendor daemon
+  ['Vendor nodaemon O P', "VENDOR vendor an/options/file 4321\n",1],# presents as a vendor daemon, options file
+  ['Vendor nodaemon O= P', "VENDOR vendor OPTIONS=an/options/file 4321\n",1], # port presents as a vendor daemon
+  ['Vendor bad key', "VENDOR vendor a/daemon/path options=options/file porter=4321\n",0],
+  ['Vendor 2 port keys', "VENDOR vendor a/daemon/path options=options/file port=4321  port=231\n",0],
+  ['Vendor bad key', "VENDOR vendor a/daemon/path options=options/file porter=4321\n",0],
+  ['Vendor bad key', "VENDOR vendor a/daemon/path options=options/file port=4321 boo=ghost\n",0],
+
+['Use server', "USE_SERVER\n",1],
+['Use server', "USE_SERVER to many paramaters\n",0],
+['Use server', "USE_SERVER options=bad\n",0],
 
  );
 
