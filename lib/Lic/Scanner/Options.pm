@@ -16,8 +16,7 @@ use Lic::Scanner::Chunker;
 # https://docs.revenera.com/fnp/2024r2/LicAdmin_Guide/Content/helplibrary/Options_File_Syntax.htm#fla_options_999688564_1055263
 my $featurepat = qr{
         (?: 
-      
-            (?: (?<feature>[a-zA-Z0-9]+) : (?<keyword>[a-zA-Z0-9]+) = (?<value>[a-zA-Z0-9]+))  
+            (?: ["]? (?<feature>[a-zA-Z0-9]+) : (?<keyword>[a-zA-Z0-9]+) = (?<value>[a-zA-Z0-9]+) ["]?)  
                 |
             (?: " (?<feature>[a-zA-Z0-9:]+)  \s+ (?<keyword>[a-zA-Z0-9]+) = (?<value>[a-zA-Z0-9]+) ")
                 |
@@ -27,9 +26,9 @@ my $featurepat = qr{
   ;
 my $entitlementpat = qr{
        (?:
-            (?: (?<feature>[a-zA-Z0-9]+) : (?<keyword>[a-zA-Z0-9]+) = (?<value>[a-zA-Z0-9]+))    
-                |          
-            (?: (?<feature>[a-zA-Z0-9]+) \s+ (?<keyword>[a-zA-Z0-9]+) = (?<value>[a-zA-Z0-9]+))    
+            (?: ["]? (?<feature>[a-zA-Z0-9]+) : (?<keyword>[a-zA-Z0-9]+) = (?<value>[a-zA-Z0-9]+) ["]?)  
+                |
+            (?: " (?<feature>[a-zA-Z0-9:]+)  \s+ (?<keyword>[a-zA-Z0-9]+) = (?<value>[a-zA-Z0-9]+) ")
                 |   
             (?: (?<feature>[a-zA-Z0-9]+) )
        )
@@ -83,10 +82,11 @@ sub Scan {
         elsif ( $line =~
 /^(?i)(ACTIVATION_LOWWATER)\s+ $entitlementpat \s+ (?<count>\d+)\s*$/sxm
           )
-        {                                                              ## PORTED
+        {       
+            my $com =   uc($1);                                                     ## PORTED
             if ( defined $+{keyword} ) {
                 my ( $key, $entitlement, $fid, $fidid, $count ) = (
-                    uc($1), $+{feature}, $+{keyword}, $+{value},
+                     $com, $+{feature}, $+{keyword}, $+{value},
                     0 + $+{count}
                 );
                 printf( "%s %s:%s=%s %d\n",
@@ -94,7 +94,7 @@ sub Scan {
             }
             else {
                 my ( $key, $entitlement, $count ) =
-                  ( uc($1), $+{feature}, $+{count} );
+                  ( $com, $+{feature}, $+{count} );
                 printf( "%s %s %d\n", $key, $entitlement, $count );
             }
             $ok = $ok and 1;
@@ -146,6 +146,12 @@ sub Scan {
             my $key  = "DEBUGLOG";
             my $plus = $2;
             my $path = $3;
+
+            if ($line =~ m{\bAUTO_ROLLOVER.*?\bOBF_ADDMARK\b}isxm) {
+                # out of order
+                $ok = 0;
+                next;
+            }
 
             my $OBF_ADDMARK;
             if ( $line =~ s{\bOBF_ADDMARK\b}{}isxm ) {
@@ -325,7 +331,7 @@ sub Scan {
             }
         }
         else {
-            printf( "Unhandled Option : '%s'\n", $line );
+            printf( "Unhandled Command : '%s'\n", $line );
             $ok = 0;
         }
     }
@@ -417,7 +423,6 @@ sub _borrow_lowwater {
     $count = 0 + $count;
 
     if ( $featurestr =~ $featurepat ) {
-        say "Matched : $featurestr";
         if ( defined $+{keyword} ) {
             my ( $feature, $fid, $fidid ) =
               ( $+{feature}, $+{keyword}, $+{value} );
