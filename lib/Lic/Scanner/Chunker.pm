@@ -22,35 +22,32 @@ sub chunker {
     my $line = shift;
     return () if !$line;
 
-    my @extracted = extract_multiple( $line,
-        [ \&extract_bracketed, sub { extract_delimited($_[0],q{'"}) } , qr/\s*=\s*/, qr/\s+/, ] );
+    my @extracted = extract_multiple(
+        $line,
+        [
+            \&extract_bracketed, sub { extract_delimited( $_[0], q{'"} ) },
+            qr/\s*=\s*/,         qr/\s+/,
+        ]
+    );
     @extracted = grep { !/^\s+$/ } @extracted;
     $extracted[0] = uc( $extracted[0] );           # Normalize the first element
 
-    my %attrs = Lic::Scanner::Chunker::hasher(\@extracted);
-    push @extracted, \%attrs if %attrs;
-    # say Data::Dumper::Dumper( \@extracted );
-    # say "_" x 80;
+    Lic::Scanner::Chunker::hasher( \@extracted );
     return @extracted;
 }
 
 sub hasher {
     my $array = shift;
-    my %attrs;
-    my @found;
-    for my $i ( 0 .. $#{$array} ) {
-       if ($array->[$i] eq "=") {
-           if (! defined $attrs{uc($array->[$i-1])} ) {
-               $attrs{uc($array->[$i-1])} = [ $i-1,$array->[$i+1] ];
-               push @found, $i;
-           } else {
-                say "Error: Duplicate Key: $array->[$i-1]";
-           }
-       }
+
+    my $len =  @{$array};
+    my $i = $len-1;
+    while ( --$i >= 1 ) {
+        if ( $array->[$i] eq "=" ) {
+            splice @{$array}, $i - 1, 3,
+              [ uc($array->[ $i - 1 ]), $array->[ $i + 1 ] ];
+              --$i;
+              #say "$i:( $array->[ $i ][0], $array->[ $i ][1])";
+        }
     }
-    foreach my $i (reverse @found) {
-        splice @$array, $i-1, 3;
-    }
-    return %attrs;
 }
 1;
