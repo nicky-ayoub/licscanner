@@ -50,6 +50,7 @@ sub Scan2 {
         my $fname = "_" . lc( $elements[0] );
 
         # say $fname;
+        ## no critic
         no strict qw/refs/;
         if ( !defined( &{$fname} ) ) {
             printf( "-e- Unhandled Command '%s' : '%s'\n", $fname, $line );
@@ -58,6 +59,7 @@ sub Scan2 {
         }
         $ok = $ok && &{$fname}( $line, \@elements );
         use strict qw/refs/;
+        ## use critic
     }
 
     # Empty returns 1;
