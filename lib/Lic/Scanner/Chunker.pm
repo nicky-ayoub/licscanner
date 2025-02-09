@@ -29,8 +29,8 @@ sub chunker {
 
     my %attrs = Lic::Scanner::Chunker::hasher(\@extracted);
     push @extracted, \%attrs if %attrs;
-    say Data::Dumper::Dumper( \@extracted );
-    say "_" x 80;
+    # say Data::Dumper::Dumper( \@extracted );
+    # say "_" x 80;
     return @extracted;
 }
 
@@ -40,8 +40,8 @@ sub hasher {
     my @found;
     for my $i ( 0 .. $#{$array} ) {
        if ($array->[$i] eq "=") {
-           if (! defined $attrs{$array->[$i-1]} ) {
-               $attrs{$array->[$i-1]} = [ $i-1,$array->[$i+1] ];
+           if (! defined $attrs{uc($array->[$i-1])} ) {
+               $attrs{uc($array->[$i-1])} = [ $i-1,$array->[$i+1] ];
                push @found, $i;
            } else {
                 say "Error: Duplicate Key: $array->[$i-1]";
