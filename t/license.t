@@ -3,6 +3,8 @@ use Test::More;
 require_ok( 'Lic::Scanner::License' );
 
  my @tests = (
+  
+  ['invalid command', "# This is a OK\nnope host hostid\n", 0],
      # Server host hostid
   ['Server host hostid', "# This is a OK\nServer host hostid\n", 1],
   ['Server host hostid 1234', "# This is a OK\nServer host hostid 1234\n", 1],
