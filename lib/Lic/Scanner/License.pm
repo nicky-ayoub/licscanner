@@ -8,16 +8,6 @@ use List::UtilsBy qw( extract_by );
 use Lic::Scanner::File;
 use Lic::Scanner::Chunker;
 
-my %DISPATCH = (
-    SERVER     => \&_server,
-    VENDOR     => \&_vendor,
-    USE_SERVER => \&_useserver,
-    FEATURE    => \&_feature,
-    INCREMENT  => \&_feature,
-    PACKAGE    => \&_package,
-    UPGRADE    => \&_upgrade,
-);
-
 sub Scan {
     my $input = shift;
     my @lines = Lic::Scanner::File::processBackSlash($input);
@@ -27,13 +17,15 @@ sub Scan {
 
         my @elements = Lic::Scanner::Chunker::chunker($line);
 
-        if ( !defined $DISPATCH{ uc( $elements[0] ) } ) {
+        my $fname = "_" . lc($elements[0]);
+        no strict qw/refs/; 
+        if ( ! defined( &{$fname} ) ) {
             printf( "-e- Unhandled Command : '%s'\n", $line );
             $ok = 0;
             next;
         }
-        $ok = $ok && $DISPATCH{ uc( $elements[0] ) }->( $line, \@elements );
-
+        $ok = $ok && &{$fname}( $line, \@elements );
+        use strict qw/refs/;
     }
 
     # Empty returns 1;
@@ -171,7 +163,7 @@ sub _vendor {
     return 1;
 }
 
-sub _useserver {
+sub _use_server {
     my $line     = shift;
     my $elements = shift;
 
@@ -183,6 +175,10 @@ sub _useserver {
     }
     printf("$command\n");
     return 1;
+}
+
+sub _increment {
+    goto &_feature;
 }
 
 sub _feature {
