@@ -17,10 +17,11 @@ sub Scan {
 
         my @elements = Lic::Scanner::Chunker::chunker($line);
 
+        # map function to elements[0]. If it exists call it with line and elements
         my $fname = "_" . lc($elements[0]);
         no strict qw/refs/; 
         if ( ! defined( &{$fname} ) ) {
-            printf( "-e- Unhandled Command : '%s'\n", $line );
+            printf( "-e- Unhandled Command %s : '%s'\n", $elements[0], $line );
             $ok = 0;
             next;
         }
