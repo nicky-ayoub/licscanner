@@ -16,8 +16,6 @@ require_ok( 'Lic::Scanner::License' );
   ['Server host hostid bad_opt', "# This is a bad\nServer host hostid bad_opt\n",0],
   ['Server  primary_is_master twice', "# This is a bad\nServer host hostid primary_is_master heartbeat_interval=78 primary_is_master\n",0],
   
-  ['Feature', "FEATURE feature vendor feat_version exp_date num_lic VENDOR_STRING=\"this is a vendor string\" \\\n AUTH={ a=\"str\" b=(a b c) sign3=\"x y x\"} SIGN=\"<...>\"\n",1],
-
   ['Vendor minimal', "VENDOR vendor\n",1],
   ['Vendor D', "VENDOR vendor a/daemon/path\n",1],
   ['Vendor D O', "VENDOR vendor a/daemon/path options/file\n",1],
@@ -40,9 +38,15 @@ require_ok( 'Lic::Scanner::License' );
   ['Vendor bad key', "VENDOR vendor a/daemon/path options=options/file porter=4321\n",0],
   ['Vendor bad key', "VENDOR vendor a/daemon/path options=options/file port=4321 boo=ghost\n",0],
 
-['Use server', "USE_SERVER\n",1],
-['Use server', "USE_SERVER to many paramaters\n",0],
-['Use server', "USE_SERVER options=bad\n",0],
+  ['Use server', "USE_SERVER\n",1],
+  ['Use server', "USE_SERVER to many paramaters\n",0],
+  ['Use server', "USE_SERVER options=bad\n",0],
+
+  ['Feature', "FEATURE featurename vendor 2023.111 31-dec-2024 15 VENDOR_STRING=\"this is a vendor string\" \\\n AUTH={ a=\"str\" b=(a b c) sign3=\"x y x\"} SIGN=\"<...>\"\n",1],
+  ['Feature', "FEATURE featurename vendor 2023.111 31-dec-2024 uncounted VENDOR_STRING=\"this is a vendor string\" \\\n AUTH={ a=\"str\" b=(a b c) sign3=\"x y x\"} SIGN=\"<...>\"\n",1],
+ ['Feature', "FEATURE featurename vendor 2023.111 0000 uncounted VENDOR_STRING=\"this is a vendor string\" \\\n AUTH={ a=\"str\" b=(a b c) sign3=\"x y x\"} SIGN=\"<...>\"\n",1],
+ ['Feature', "FEATURE featurename vendor 2023.111 31-dec-2024 uncounted VENDOR_STRING=\"this is a vendor string\" \\\n AUTH={ a=\"str\" b=(a b c) sign3=\"x y x\"} SIGN=\"<...>\"\n",1],
+ ['Feature', "FEATURE featurename vendor 2023.111 permanent uncounted VENDOR_STRING=\"this is a vendor string\" \\\n AUTH={ a=\"str\" b=(a b c) sign3=\"x y x\"} SIGN=\"<...>\"\n",1],
 
  );
 

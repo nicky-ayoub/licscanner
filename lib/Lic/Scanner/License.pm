@@ -33,7 +33,7 @@ sub Scan {
             $ok = $ok && _useserver( $line, \@elements, \%attrs );
         }
         elsif ( $elements[0] eq "FEATURE" ) {
-            $ok = $ok && 1;
+            $ok = $ok && _feature( $line, \@elements, \%attrs );
         }
         else {
             printf( "-e- Unhandled Option : '%s'\n", $line );
@@ -130,10 +130,10 @@ sub _vendor {
     }
     else {
         $daemonpath = shift @$elements;
-        if (!$options) {
+        if ( !$options ) {
             $options = shift @$elements;
-        }        
-        if (!$port) {
+        }
+        if ( !$port ) {
             $port = shift @$elements;
         }
     }
@@ -161,13 +161,69 @@ sub _useserver {
         printf( "-e- USE_SERVER to many parameters : '%s'\n", $line );
         return 0;
     }
-    if (keys %$attrs) {
+    if ( keys %$attrs ) {
         printf( "-e- USE_SERVER to many options : '%s'\n", $line );
         return 0;
     }
     return 1;
 }
 
+sub _feature {
+    my $line     = shift;
+    my $elements = shift;
+    my $attrs    = shift;
+
+    my $command      = shift @$elements;
+    my $feature      = shift @$elements;
+    my $vendor       = shift @$elements;
+    my $feat_version = shift @$elements;
+    my $exp_date     = shift @$elements;
+    my $num_lic      = shift @$elements;
+
+    unless ($feature) {
+        printf( "-e- No Feature : '%s'\n", $line );
+        return 0;
+    }
+    unless ($vendor) {
+        printf( "-e- No Vendor : '%s'\n", $line );
+        return 0;
+    }
+
+    unless ($feat_version) {
+        printf( "-e- No Feature Version : '%s'\n", $line );
+        return 0;
+    }
+    unless ($exp_date) {
+        printf( "-e- No Expiration Date : '%s'\n", $line );
+        return 0;
+    }
+    if ( $exp_date !~ /^0{1,4}$/ and lc($exp_date) ne 'permanent' and  $exp_date !~ /^\d{1,2}-[a-z]{3}-\d{4}$/) {
+        printf( "-e- Invalid Expiration Date $exp_date : '%s'\n", $line );
+        return 0;
+    }
+    unless ($num_lic) {
+        printf( "-e- No Number of Licenses : '%s'\n", $line );
+        return 0;
+    }
+    if ( $num_lic !~ /^\d+$/ and lc($num_lic) ne 'uncounted' ) {
+        printf( "-e- Invalid Number of Licenses $num_lic : '%s'\n", $line );
+        return 0;
+    }
+    if (@$elements) {
+        printf( "-e- Unhandled Options : '%s'\n", $line );
+        return 0;
+    }
+    printf(
+">>> $command: %s, Vendor: %s, Feature Version: %s, Expiration Date: %s, Number of Licenses: %s\n",
+        $feature, $vendor, $feat_version, $exp_date, $num_lic );
+    for my $attr ( keys %$attrs ) {
+        my $value = $attrs->{$attr}->[1];
+        print "\t+ $attr=$value\n";
+    }
+
+    return 1;
+
+}
 1;
 __END__
 =head1 NAME Lic::Scanner::License
