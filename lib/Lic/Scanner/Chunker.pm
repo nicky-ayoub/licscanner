@@ -25,28 +25,32 @@ sub chunker {
     my @extracted = extract_multiple(
         $line,
         [
-            \&extract_bracketed, sub { extract_delimited( $_[0], q{'"} ) },
-            qr/\s*=\s*/,         qr/\s+/,
+            \&extract_bracketed,
+            sub { extract_delimited( $_[0], q{'"} ) },
+            qr/\w+:\w+=\w+/,    # feature and entitlement pattern
+            qr/\s*=\s*/,
+            qr/\s*/,
         ]
     );
-    @extracted = grep { !/^\s+$/ } @extracted;
-    $extracted[0] = uc( $extracted[0] );           # Normalize the first element
-
-    Lic::Scanner::Chunker::hasher( \@extracted );
+    @extracted = grep { !/^\s+$/ } @extracted;    # Remove white spaces elements
+    s{\s+$}{} for @extracted;                     # trim trailing spaces
+    $extracted[0] = uc( $extracted[0] );          # Uppercase the first element
+    _processKV( \@extracted );
     return @extracted;
 }
 
-sub hasher {
+sub _processKV {
     my $array = shift;
 
-    my $len =  @{$array};
-    my $i = $len-1;
+    my $len = @{$array};
+    my $i   = $len - 1;
     while ( --$i >= 1 ) {
         if ( $array->[$i] eq "=" ) {
             splice @{$array}, $i - 1, 3,
-              [ uc($array->[ $i - 1 ]), $array->[ $i + 1 ] ];
-              --$i;
-              #say "$i:( $array->[ $i ][0], $array->[ $i ][1])";
+              [ uc( $array->[ $i - 1 ] ), $array->[ $i + 1 ] ];
+            --$i;
+
+            #say "$i:( $array->[ $i ][0], $array->[ $i ][1])";
         }
     }
 }
