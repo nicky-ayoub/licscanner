@@ -19,6 +19,8 @@ sub Scan {
 
         # map function to elements[0]. If it exists call it with line and elements
         my $fname = "_" . lc($elements[0]);
+        
+        ## no critic
         no strict qw/refs/; 
         if ( ! defined( &{$fname} ) ) {
             printf( "-e- Unhandled Command %s : '%s'\n", $elements[0], $line );
@@ -27,6 +29,7 @@ sub Scan {
         }
         $ok = $ok && &{$fname}( $line, \@elements );
         use strict qw/refs/;
+        ## no critic
     }
 
     # Empty returns 1;
