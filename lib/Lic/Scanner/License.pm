@@ -8,6 +8,16 @@ use List::UtilsBy qw( extract_by );
 use Lic::Scanner::File;
 use Lic::Scanner::Chunker;
 
+my %DISPATCH = (
+    SERVER     => \&_server,
+    VENDOR     => \&_vendor,
+    USE_SERVER => \&_useserver,
+    FEATURE    => \&_feature,
+    INCREMENT  => \&_feature,
+    PACKAGE    => \&_package,
+    UPGRADE    => \&_upgrade,
+);
+
 sub Scan {
     my $input = shift;
     my @lines = Lic::Scanner::File::processBackSlash($input);
@@ -17,28 +27,13 @@ sub Scan {
 
         my @elements = Lic::Scanner::Chunker::chunker($line);
 
-        if ( $elements[0] eq "SERVER" ) {
-            $ok = $ok && _server( $line, \@elements, );
-        }
-        elsif ( $elements[0] eq "VENDOR" ) {
-            $ok = $ok && _vendor( $line, \@elements, );
-        }
-        elsif ( $elements[0] eq "USE_SERVER" ) {
-            $ok = $ok && _useserver( $line, \@elements, );
-        }
-        elsif ( $elements[0] eq "FEATURE" or $elements[0] eq "INCREMENT" ) {
-            $ok = $ok && _feature( $line, \@elements, );
-        }
-        elsif ( $elements[0] eq "PACKAGE" ) {
-            $ok = $ok && _package( $line, \@elements, );
-        }
-        elsif ( $elements[0] eq "UPGRADE" ) {
-            $ok = $ok && _upgrade( $line, \@elements, );
-        }
-        else {
-            printf( "-e- Unhandled Option : '%s'\n", $line );
+        if ( !defined $DISPATCH{ uc( $elements[0] ) } ) {
+            printf( "-e- Unhandled Command : '%s'\n", $line );
             $ok = 0;
+            next;
         }
+        $ok = $ok && $DISPATCH{ uc( $elements[0] ) }->( $line, \@elements );
+
     }
 
     # Empty returns 1;
@@ -167,10 +162,10 @@ sub _vendor {
     $daemonpath //= "";
     if ($port) {
         $port = "PORT='$port'";
-    } 
+    }
     if ($options) {
         $options = "OPTIONS='$options'";
-    }   
+    }
     printf( "$command %s %s %s %s\n", $vendor, $daemonpath, $options, $port );
 
     return 1;
