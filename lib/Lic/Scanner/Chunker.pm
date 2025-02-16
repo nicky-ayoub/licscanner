@@ -41,7 +41,6 @@ sub chunker {
 
 sub _processKV {
     my $array = shift;
-
     my $len = @{$array};
     my $i   = $len - 1;
     while ( --$i >= 1 ) {
@@ -49,8 +48,6 @@ sub _processKV {
             splice @{$array}, $i - 1, 3,
               [ uc( $array->[ $i - 1 ] ), $array->[ $i + 1 ] ];
             --$i;
-
-            #say "$i:( $array->[ $i ][0], $array->[ $i ][1])";
         }
     }
 }
