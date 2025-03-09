@@ -27,13 +27,14 @@ sub chunker {
         [
             \&extract_bracketed,
             sub { extract_delimited( $_[0], q{'"} ) },
-            qr/\w+:\w+=\w+/,    # feature and entitlement pattern
+            qr/\W+:\W+=\W+/,    # feature and entitlement pattern
             qr/\s*=\s*/,
             qr/\s*/,
         ]
     );
     @extracted = grep { !/^\s+$/ } @extracted;    # Remove white spaces elements
     s{\s+$}{} for @extracted;                     # trim trailing spaces
+    say Dumper \@extracted;
     $extracted[0] = uc( $extracted[0] );          # Uppercase the first element
     _processKV( \@extracted );
     return @extracted;

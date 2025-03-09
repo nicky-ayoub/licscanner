@@ -10,18 +10,18 @@ subtest 'Test chunker with empty input' => sub {
 };
 
 subtest 'Test chunker with simple input' => sub {
-    my @result = Lic::Scanner::Chunker::chunker('feature:entitlement=value');
-    is_deeply(\@result, [['FEATURE', 'value']], 'Simple input should return processed key-value pair');
+    my @result = Lic::Scanner::Chunker::chunker('key feature:entitlement=value');
+    is_deeply(\@result, ['KEY', ['FEATURE:ENTITLEMENT', 'value']], 'Simple input should return processed key-value pair');
 };
 
 subtest 'Test chunker with complex input' => sub {
-    my @result = Lic::Scanner::Chunker::chunker('feature:entitlement=value other:entitlement=another');
-    is_deeply(\@result, [['FEATURE', 'value'], ['OTHER', 'another']], 'Complex input should return multiple processed key-value pairs');
+    my @result = Lic::Scanner::Chunker::chunker('key feature:entitlement=value other:entitlement=another');
+    is_deeply(\@result, ['KEY',  ['FEATURE:ENTITLEMENT', 'value'], ['OTHER:ENTITLEMENT', 'another']], 'Complex input should return multiple processed key-value pairs');
 };
 
 subtest 'Test chunker with mixed input' => sub {
-    my @result = Lic::Scanner::Chunker::chunker('feature:entitlement=value "quoted string" {bracketed}');
-    is_deeply(\@result, [['FEATURE', 'value'], '"quoted string"', '{bracketed}'], 'Mixed input should return processed key-value pair and other elements');
+    my @result = Lic::Scanner::Chunker::chunker(' key feature:entitlement=value "quoted string" {bracketed}');
+    is_deeply(\@result, ['KEY', ['FEATURE:ENTITLEMENT', 'value'], '"quoted string"', '{bracketed}'], 'Mixed input should return processed key-value pair and other elements');
 };
 
 subtest 'Test _processKV' => sub {
